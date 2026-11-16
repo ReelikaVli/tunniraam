@@ -1,26 +1,127 @@
 import { useState, useRef } from "react";
 
-const SYSTEM_PROMPT = `Sa oled refleksiooni assistent. Analüüsi õpetaja tunni kirjeldust tunniraami põhjal. Vasta AINULT JSON-na, ilma markdown-märgenditeta.
+const SYSTEM_PROMPT = `Sa oled refleksiooni ja planeerimise assistent Nissi kooli õpetajatele. Õpetaja kirjeldab planeeritavat või toimunud tundi. Aita tal märgata, mis on tunnis juba toetatud, mis vajab tähelepanu ja mida järgmiseks proovida.
 
-Tunniraami plokid:
+HOIAK
+- See ei ole hindamine. Ära hinda õpetajat ega tunni headust.
+- Ole toetav, konkreetne ja praktiline. Kasuta lihtsat eesti keelt.
+- Väldi üldist kiitmist (suurepärane, väga hea) ja moraliseerimist.
+- Paku väikeseid realistlikke parendusi, mitte ideaalset tundi.
+- Kui kirjelduses midagi mainitud ei ole, ütle, et see ei ole kirjeldusest näha. Ära väida, et seda ei tehtud.
+- Ära nimeta pedagoogilisi raamistikke ega teooriaid. Erand on IKAP-i tasemed, mis on eraldi osa.
+- Iga vastus on 1-2 lühikest lauset.
+
+NISSI KOOLI TUNNIRAAM (analüüsi alus, kasuta neid küsimusi)
+
 1. Häälestus ja fookus
+- Kuidas luuakse tunni alguses tähelepanu ja õppimiseks valmisolek?
+- Kuidas aktiveeritakse vajalikud eelteadmised?
+- Kuidas on eesmärk sõnastatud nii, et õpilane mõistab, mida ja miks õpitakse?
+- Kas uus õppimine on jagatud väiksemateks ja jõukohasteks sammudeks?
+- Mis on plaan, kui klass ei ole tunni alguses õppimiseks valmis?
+
 2. Aktiivne õppimine ja teadmiste loomine
+- Mis paneb õpilased päriselt mõtlema?
+- Kus saavad õpilased oma mõtteid selgitada või põhjendada?
+- Kuidas saavad kõik õpilased aktiivselt kaasa mõelda?
+- Kus on koht katsetamiseks, eksimiseks ja ümbermõtlemiseks?
+- Mida saavad õpilased valida, otsustada või ise luua?
+
 3. Õppimise mõtestamine ja toetamine
+- Kuidas seostavad õpilased uut teadmist varasema õppimise või päriseluga?
+- Kuidas saavad õpilased märgata, mida nad mõistavad ja mis vajab harjutamist?
+- Kuidas saavad õpilased märgata, mis neid õppimisel aitas?
+- Millise tegevusega kogub õpetaja infot arusaamise kohta?
+- Mis on plaan, kui arusaam ei kujune ootuspäraselt?
+
 4. Kokkuvõte ja edasi liikumine
+- Kuidas tuuakse esile kõige olulisemad teadmised või oskused?
+- Millise tegevusega võtavad õpilased õpitu ise kokku?
+- Millise tegevusega saavad õpilased õpitut kinnistada?
+- Kuidas suunatakse õpilasi pärast tundi õppimist jätkama?
+
 5. Õppimist toetav rütm ja keskkond
+- Kas tunnis on piisavalt aega mõtlemiseks ja tegutsemiseks?
+- Kuhu on planeeritud tegevusvahetus, liikumine või taastumishetk?
+- Kas juhised on lihtsasti jälgitavad ja antud õigel hetkel?
+- Kuidas on vähendatud liigset infot ja töömälu ülekoormust?
+- Kas õhkkond toetab küsimist, eksimist ja abi palumist?
 
-Tagasta täpselt see JSON struktuur (eesti keeles, lühikesed vastused):
-{"sections":[{"id":1,"tugevused":"...","tahelepanu":"...","idee":"..."},{"id":2,"tugevused":"...","tahelepanu":"...","idee":"..."},{"id":3,"tugevused":"...","tahelepanu":"...","idee":"..."},{"id":4,"tugevused":"...","tahelepanu":"...","idee":"..."},{"id":5,"tugevused":"...","tahelepanu":"...","idee":"..."}],"kokkuvote":{"tugevus":"...","kognitiivne_risk":"...","kaasamine_risk":"...","jarmine_samm":"..."}}
+TAUSTAPÕHIMÕTTED (kasuta neid vaikselt, ära nimeta)
+- Töömälu on piiratud: väikesed sammud, selged juhised, vähe infot korraga.
+- Õppija vajadused: autonoomia (valikud), kompetentsus (jõukohane väljakutse, edasiminek), seotus ja turvalisus.
+- Mõtlemise nähtavaks tegemine ja selgitamine teistele süvendavad õppimist.
+- Meenutamine, hajutatud kordamine ja enesehindamine kinnistavad.
+- Toetus järk-järgult: sama ülesanne eri tugitasemetega, et kaasata nii tugevaid kui toetust vajavaid õpilasi (sh HEV).
+- Eksimine on õppimise osa, pingutust ja edasiminekut tasub märgata.
+- Rütm: mõtlemisaeg, tegevusvahetus, liikumine ja taastumine hoiavad tähelepanu.
 
-Täida iga "..." reaalse lühikese vastusega eesti keeles. Ole konkreetne ja toetav. Ära moraliseeri.`;
+IKAP (õpilaste tegevuste tasemed)
+Loe kirjeldusest välja, mida ÕPILASED teevad (mitte õpetaja). Iga tegevuse jaoks vali tase:
+- P (passiivne): õpilane kuulab, vaatab, loeb või jälgib, ise midagi tegemata.
+- A (aktiivne): õpilane teeb midagi füüsiliselt või valib olemasolevat infot: märgib, kopeerib, kordab, alla joonib, näitab, sorteerib.
+- K (konstruktiivne): õpilane loob oma sõnadega midagi, mida tal enne ei olnud: selgitab, põhjendab, võrdleb, seostab, koostab küsimuse või mõttekaardi, teeb järelduse.
+- I (interaktiivne): vähemalt kaks õpilast ehitavad koos üksteise ideedele: arutlevad, põhjendavad ja täiendavad üksteist dialoogis. Pelk paarisülesande jagamine või vastuste võrdlemine ei ole veel interaktiivne.
+Kui tegevus võib kuuluda kahte tasemesse, vali madalam. Tase sõltub sellest, mida õpilane tegelikult teeb, mitte sellest, mida õpetaja ootab. Passiivne tegevus ei ole halb, uue info tutvustamisel on see sageli vajalik. Kui kirjeldus on liiga üldine, et tegevusi eristada, anna tegevuste loend tühjana ja ütle märkuses, mida kirjeldusse lisada. Kuni 8 tegevust, iga nimi 2-5 sõna. Igale tegevusele lisa "plokk" (number 1-5: millisesse tunniraami plokki tegevus kõige paremini kuulub) ja "pohjus" (kuni 8 sõna: miks just see tase).
+
+VÄLJUND
+Vasta AINULT validse JSON-na, ilma markdown-märgenditeta ja ilma selgitusteta. Keel on eesti. Kasuta täpselt seda struktuuri ja täida kõik väljad päris tekstiga:
+{
+  "ikap": {
+    "tegevused": [
+      {"nimi": "tegevuse lühinimi", "tase": "P", "plokk": 2, "pohjus": "õpilased ainult kuulavad"},
+      {"nimi": "järgmine tegevus", "tase": "K", "plokk": 3, "pohjus": "põhjendavad oma sõnadega"}
+    ],
+    "markus": "1-2 lauset: milline tasemete segu tunnis on ja kus võiks üht tegevust sihipäraselt ühe taseme võrra tõsta"
+  },
+  "sections": [
+    {"id": 1, "tugevused": "mis on häälestuses juba toetatud", "tahelepanu": "mis vajab tähelepanu või ei ole kirjeldusest näha", "idee": "üks konkreetne realistlik idee"},
+    {"id": 2, "tugevused": "mis on aktiivses õppimises toetatud", "tahelepanu": "mis vajab tähelepanu", "idee": "üks konkreetne idee"},
+    {"id": 3, "tugevused": "mis on mõtestamises toetatud", "tahelepanu": "mis vajab tähelepanu", "idee": "üks konkreetne idee"},
+    {"id": 4, "tugevused": "mis on kokkuvõttes toetatud", "tahelepanu": "mis vajab tähelepanu", "idee": "üks konkreetne idee"},
+    {"id": 5, "tugevused": "mis on rütmis ja keskkonnas toetatud", "tahelepanu": "mis vajab tähelepanu", "idee": "üks konkreetne idee"}
+  ],
+  "kokkuvote": {
+    "tugevus": "tunni selgeim tugevus, 1 lause",
+    "kognitiivne_risk": "kus võib olla liiga palju korraga, 1 lause",
+    "kaasamine_risk": "kus võivad mõned õpilased kõrvale jääda, 1 lause",
+    "jarmine_samm": "üks muudatus, mis mõjutaks õppimise kvaliteeti kõige rohkem, 1-2 lauset"
+  }
+}`;
 
 const SECTIONS = [
-  { title: "Häälestus ja fookus", color: "#f89521", text: "#fff", bg: "#fff9f0", border: "#f8b96e" },
-  { title: "Aktiivne õppimine ja teadmiste loomine", color: "#8ec641", text: "#1A3C08", bg: "#f4fae8", border: "#a2d464" },
-  { title: "Õppimise mõtestamine ja toetamine", color: "#3b6530", text: "#fff", bg: "#f0f5ec", border: "#64a055" },
-  { title: "Kokkuvõte ja edasi liikumine", color: "#c07820", text: "#fff", bg: "#fff8ee", border: "#e4aa5f" },
-  { title: "Õppimist toetav rütm ja keskkond", color: "#5a8a35", text: "#fff", bg: "#f2f7ed", border: "#76b252" },
+  { short: "Häälestus", title: "Häälestus ja fookus", color: "#f89521", text: "#fff", bg: "#fff9f0", border: "#f8b96e" },
+  { short: "Aktiivne õppimine", title: "Aktiivne õppimine ja teadmiste loomine", color: "#8ec641", text: "#1A3C08", bg: "#f4fae8", border: "#a2d464" },
+  { short: "Mõtestamine", title: "Õppimise mõtestamine ja toetamine", color: "#3b6530", text: "#fff", bg: "#f0f5ec", border: "#64a055" },
+  { short: "Kokkuvõte", title: "Kokkuvõte ja edasi liikumine", color: "#c07820", text: "#fff", bg: "#fff8ee", border: "#e4aa5f" },
+  { short: "Rütm ja keskkond", title: "Õppimist toetav rütm ja keskkond", color: "#5a8a35", text: "#fff", bg: "#f2f7ed", border: "#76b252" },
 ];
+
+// IKAP-i tasemed, kuvamise järjekord I, K, A, P. Pruun skaala, et mitte segi minna plokkide koolivärvidega.
+const IKAP_ORDER = ["I", "K", "A", "P"];
+const IKAP = {
+  I: { nimi: "Interaktiivne", seletus: "arutavad ja täiendavad üksteist", bg: "#5b3a29", fg: "#ffffff", dot: "#ffffff30", ring: "#5b3a29" },
+  K: { nimi: "Konstruktiivne", seletus: "loovad oma sõnadega", bg: "#9a6b45", fg: "#ffffff", dot: "#ffffff30", ring: "#9a6b45" },
+  A: { nimi: "Aktiivne", seletus: "teevad midagi, valivad infot", bg: "#d8c29a", fg: "#4a3414", dot: "#ffffff80", ring: "#d8c29a" },
+  P: { nimi: "Passiivne", seletus: "kuulavad, vaatavad, loevad", bg: "#efe9dc", fg: "#6b5f48", dot: "#ffffffaa", ring: "#d8cfba" },
+};
+
+function normalizeIkap(ikap) {
+  return ((ikap && ikap.tegevused) || [])
+    .map(t => ({
+      nimi: String(t.nimi || "").trim(),
+      tase: String(t.tase || "").trim().toUpperCase().charAt(0),
+      plokk: parseInt(t.plokk, 10) || 0,
+      pohjus: String(t.pohjus || "").trim(),
+    }))
+    .filter(t => t.nimi && IKAP[t.tase]);
+}
+
+function IkapBubble({ tase, size = 24 }) {
+  return (
+    <span style={{ background: IKAP[tase].bg, color: IKAP[tase].fg, width: size, height: size, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: Math.round(size * 0.5), fontWeight: 700, fontFamily: "sans-serif", flexShrink: 0, border: `1px solid ${IKAP[tase].ring}`, boxSizing: "border-box" }}>{tase}</span>
+  );
+}
 
 function Row({ icon, label, text, color }) {
   return (
@@ -34,11 +135,83 @@ function Row({ icon, label, text, color }) {
   );
 }
 
+function IkapCard({ tegevused, markus }) {
+  const counts = { I: 0, K: 0, A: 0, P: 0 };
+  tegevused.forEach(t => { counts[t.tase] += 1; });
+  const total = tegevused.length;
+  const th = { textAlign: "left", fontSize: 11, fontWeight: 700, color: "#8a7d66", textTransform: "uppercase", letterSpacing: "0.06em", padding: "0 8px 6px 0", fontFamily: "sans-serif" };
+
+  return (
+    <div style={{ marginBottom: 14, borderRadius: 10, overflow: "hidden", border: "1px solid #d8cfba" }}>
+      <div style={{ background: "#5b3a29", color: "white", padding: "9px 16px", fontSize: 13, fontWeight: 600, fontFamily: "sans-serif" }}>
+        IKAP: kuidas õpilased tunnis tegutsevad
+      </div>
+      <div style={{ padding: "14px 16px 8px", background: "#fbf8f1" }}>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, marginBottom: 14 }}>
+          {IKAP_ORDER.map(k => (
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <IkapBubble tase={k} />
+              <span style={{ lineHeight: 1.3, fontFamily: "sans-serif" }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#2d2d2b", display: "block" }}>{IKAP[k].nimi}</span>
+                <span style={{ fontSize: 11, color: "#8a7d66" }}>{IKAP[k].seletus}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {total > 0 ? (
+          <>
+            <div style={{ display: "flex", height: 26, borderRadius: 13, overflow: "hidden", marginBottom: 14, border: "1px solid #d8cfba" }}>
+              {IKAP_ORDER.filter(k => counts[k] > 0).map(k => (
+                <div key={k} style={{ flex: counts[k], background: IKAP[k].bg, color: IKAP[k].fg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, fontFamily: "sans-serif" }}>
+                  {k} {counts[k]}
+                </div>
+              ))}
+            </div>
+
+            <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 12, fontFamily: "sans-serif" }}>
+              <thead>
+                <tr>
+                  <th style={{ ...th, width: 36 }}>Tase</th>
+                  <th style={th}>Tegevus</th>
+                  <th style={{ ...th, width: 120 }}>Tunniraami plokk</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tegevused.map((t, i) => (
+                  <tr key={i} style={{ borderTop: "1px solid #e8e1d0" }}>
+                    <td style={{ padding: "8px 8px 8px 0", verticalAlign: "top" }}><IkapBubble tase={t.tase} size={22} /></td>
+                    <td style={{ padding: "8px 8px 8px 0", verticalAlign: "top", lineHeight: 1.45 }}>
+                      <span style={{ fontSize: 13, color: "#2d2d2b", display: "block" }}>{t.nimi}</span>
+                      {t.pohjus && <span style={{ fontSize: 12, color: "#8a7d66" }}>{t.pohjus}</span>}
+                    </td>
+                    <td style={{ padding: "8px 0", verticalAlign: "top", fontSize: 12, color: "#6b5f48", lineHeight: 1.4 }}>
+                      {SECTIONS[t.plokk - 1] ? `${t.plokk}. ${SECTIONS[t.plokk - 1].short}` : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        ) : (
+          <p style={{ margin: "0 0 12px", fontSize: 13, color: "#888", fontFamily: "sans-serif" }}>
+            Kirjeldusest ei õnnestunud õpilaste tegevusi eristada.
+          </p>
+        )}
+
+        {markus && <Row icon="◎" label="Märkus" text={markus} color="#5b3a29" />}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [text, setText] = useState("");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showIkap, setShowIkap] = useState(false);
   const [error, setError] = useState("");
   const resultsRef = useRef(null);
 
@@ -50,14 +223,14 @@ export default function App() {
     setError("");
     setLoading(true);
     setResults(null);
+    setShowIkap(false);
 
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1500,
+          max_tokens: 4000,
           system: SYSTEM_PROMPT,
           messages: [{ role: "user", content: `Tunni kirjeldus: ${text}` }],
         }),
@@ -80,7 +253,7 @@ export default function App() {
       }
       setResults(JSON.parse(jsonMatch[0]));
     } catch (e) {
-      setError(`Päring ebaõnnestus: ${e.message}`);
+      setError(`Päring ebaõnnestus: ${e.message}. Proovi uuesti.`);
     }
     setLoading(false);
   };
@@ -105,6 +278,7 @@ export default function App() {
           image: { type: "jpeg", quality: 0.97 },
           html2canvas: { scale: 2, useCORS: true, logging: false },
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["avoid-all", "css"] },
         })
         .from(resultsRef.current)
         .save();
@@ -114,6 +288,8 @@ export default function App() {
     setSaving(false);
   };
 
+  const ikapList = normalizeIkap(results && results.ikap);
+
   return (
     <div style={{ maxWidth: 700, margin: "0 auto", fontFamily: "Georgia, serif", color: "#2d2d2b", padding: "2rem 1.25rem 3rem" }}>
       <div style={{ marginBottom: 28 }}>
@@ -122,14 +298,14 @@ export default function App() {
           <span style={{ fontSize: 12, color: "#bbb", fontFamily: "sans-serif" }}>Nissi kool</span>
         </div>
         <p style={{ margin: 0, fontSize: 14, color: "#666", lineHeight: 1.6, fontFamily: "sans-serif" }}>
-          Kirjelda planeeritavat või toimunud tundi. Rakendus aitab märgata tugevusi, puuduvaid osi ja järgmisi samme.
+          Kirjelda planeeritavat või toimunud tundi. Rakendus aitab märgata tugevusi, puuduvaid osi ja järgmisi samme. Mida konkreetsemalt kirjeldad, mida õpilased teevad, seda täpsem on analüüs.
         </p>
       </div>
 
       <textarea
         value={text}
         onChange={e => setText(e.target.value)}
-        placeholder="Näiteks: Planeerin 6. klassi loodusõpetuse tunni fotosünteesist. Alustan küsimusega, mida õpilased juba teavad…"
+        placeholder="Näiteks: Planeerin 6. klassi loodusõpetuse tunni fotosünteesist. Alustan küsimusega, mida õpilased juba teavad. Seejärel näitan videot ja õpilased arutavad paarides, miks taimed vajavad valgust…"
         style={{
           width: "100%", minHeight: 150, padding: "14px 16px", fontSize: 14,
           fontFamily: "sans-serif", borderRadius: 10, border: "1.5px solid #d4d0c8",
@@ -150,6 +326,16 @@ export default function App() {
         }}>
           {loading ? "Analüüsin…" : "Analüüsi tundi"}
         </button>
+
+        {results && (
+          <button onClick={() => setShowIkap(v => !v)} style={{
+            padding: "10px 20px", background: showIkap ? "#5b3a29" : "white", color: showIkap ? "white" : "#5b3a29",
+            border: "1.5px solid #5b3a29", borderRadius: 8, fontSize: 14,
+            cursor: "pointer", fontWeight: 500, fontFamily: "sans-serif",
+          }}>
+            {showIkap ? "Peida IKAP tasemed" : "Näita IKAP tasemeid"}
+          </button>
+        )}
 
         {results && (
           <button onClick={savePDF} disabled={saving} style={{
@@ -177,9 +363,12 @@ export default function App() {
             </p>
           </div>
 
+          {showIkap && results.ikap && <IkapCard tegevused={ikapList} markus={results.ikap.markus} />}
+
           <div style={{ display: "grid", gap: 14 }}>
             {results.sections?.map((sec, i) => {
               const s = SECTIONS[i] || SECTIONS[0];
+              const inBlock = ikapList.filter(t => t.plokk === i + 1);
               return (
                 <div key={i} style={{ borderRadius: 10, overflow: "hidden", border: `1px solid ${s.border}` }}>
                   <div style={{ background: s.color, color: s.text, padding: "9px 16px", fontSize: 13, fontWeight: 600, fontFamily: "sans-serif", display: "flex", alignItems: "center", gap: 8 }}>
@@ -189,6 +378,18 @@ export default function App() {
                     {s.title}
                   </div>
                   <div style={{ padding: "14px 16px 6px", background: s.bg }}>
+                    {showIkap && (
+                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 12 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "#8a7d66", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "sans-serif", marginRight: 2 }}>IKAP</span>
+                        {inBlock.length > 0 ? inBlock.map((t, j) => (
+                          <span key={j} style={{ background: "white", border: `1px solid ${IKAP[t.tase].ring}`, borderRadius: 20, padding: "2px 10px 2px 3px", display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontFamily: "sans-serif", color: "#2d2d2b" }}>
+                            <IkapBubble tase={t.tase} size={20} />{t.nimi}
+                          </span>
+                        )) : (
+                          <span style={{ fontSize: 12, color: "#a39880", fontFamily: "sans-serif" }}>tegevusi pole kirjeldatud</span>
+                        )}
+                      </div>
+                    )}
                     <Row icon="✓" label="Toimib" text={sec.tugevused} color="#3b6530" />
                     <Row icon="↗" label="Tähelepanu" text={sec.tahelepanu} color="#8A4800" />
                     <Row icon="→" label="Idee" text={sec.idee} color="#1A3C70" />
@@ -213,7 +414,7 @@ export default function App() {
           )}
 
           <p style={{ marginTop: 16, fontSize: 11, color: "#ccc", fontFamily: "sans-serif", lineHeight: 1.5 }}>
-            Tunniraami peegel ei hinda õpetajat. Tagasiside põhineb kirjeldatu analüüsil.
+            Tunniraami peegel ei hinda õpetajat. Tagasiside põhineb kirjeldatu analüüsil ja on mõeldud arutelu alustamiseks.
           </p>
         </div>
       )}
