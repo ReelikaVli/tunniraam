@@ -15,8 +15,8 @@ export default async function handler(req, res) {
           { role: "system", content: req.body.system },
           { role: "user", content: req.body.messages[0].content },
         ],
-        max_tokens: 4000,
-        temperature: 0.3,
+        max_tokens: 6000,
+        temperature: 0,
       }),
     });
     const data = await response.json();
