@@ -10,12 +10,12 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
         messages: [
           { role: "system", content: req.body.system },
           { role: "user", content: req.body.messages[0].content },
         ],
-        max_tokens: req.body.max_tokens || 1500,
+        max_tokens: 4000,
         temperature: 0.3,
       }),
     });
