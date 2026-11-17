@@ -17,6 +17,7 @@ export default async function handler(req, res) {
         ],
         max_tokens: 6000,
         temperature: 0,
+        seed: 7,
       }),
     });
     const data = await response.json();
