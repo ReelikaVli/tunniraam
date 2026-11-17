@@ -149,8 +149,17 @@ export default function App() {
       });
 
       const responseText = await res.text();
+      if (res.status === 429) {
+        setError(
+          responseText.includes("rate_day")
+            ? "Päevalimiit on täis. Proovi homme uuesti."
+            : "Päringuid on praegu palju. Oota umbes minut ja proovi uuesti."
+        );
+        setLoading(false);
+        return;
+      }
       if (!res.ok) {
-        setError(`Viga (${res.status}): ${responseText.slice(0, 200)}`);
+        setError(`Analüüs ei õnnestunud (viga ${res.status}). Proovi mõne hetke pärast uuesti.`);
         setLoading(false);
         return;
       }
