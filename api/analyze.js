@@ -4,11 +4,12 @@ export default async function handler(req, res) {
   }
 
   const primary = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
-  const models = [primary, "openai/gpt-oss-20b"].filter((m, i, a) => a.indexOf(m) === i);
+  const models = [primary, "openai/gpt-oss-20b", "qwen/qwen3.8-27b"].filter((m, i, a) => a.indexOf(m) === i);
 
   try {
     let response;
     let data;
+    let sawRate = false;
     let allDay = true;
     for (const model of models) {
       response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -29,13 +30,22 @@ export default async function handler(req, res) {
         }),
       });
       data = await response.json();
-      if (response.status !== 429) break;
-      const msg = String(data?.error?.message || "");
-      if (!/per day|\(TPD\)|\(RPD\)/i.test(msg)) allDay = false;
+      if (response.ok) break;
+      if (response.status === 429) {
+        sawRate = true;
+        const msg = String(data?.error?.message || "");
+        if (!/per day|\(TPD\)|\(RPD\)/i.test(msg)) allDay = false;
+        continue;
+      }
+      if (response.status === 404) {
+        allDay = false;
+        continue;
+      }
+      break;
     }
 
     if (!response.ok) {
-      if (response.status === 429) {
+      if (sawRate) {
         return res.status(429).json({ error: { message: allDay ? "rate_day" : "rate_minute" } });
       }
       return res.status(response.status).json(data);
