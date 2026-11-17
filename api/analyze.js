@@ -2,26 +2,42 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+
+  const primary = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+  const models = [primary, "openai/gpt-oss-20b"].filter((m, i, a) => a.indexOf(m) === i);
+
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
-        messages: [
-          { role: "system", content: req.body.system },
-          { role: "user", content: req.body.messages[0].content },
-        ],
-        max_tokens: 6000,
-        temperature: 0,
-        seed: 7,
-      }),
-    });
-    const data = await response.json();
+    let response;
+    let data;
+    let allDay = true;
+    for (const model of models) {
+      response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: req.body.system },
+            { role: "user", content: req.body.messages[0].content },
+          ],
+          max_tokens: 4000,
+          temperature: 0,
+          seed: 7,
+        }),
+      });
+      data = await response.json();
+      if (response.status !== 429) break;
+      const msg = String(data?.error?.message || "");
+      if (!/per day|\(TPD\)|\(RPD\)/i.test(msg)) allDay = false;
+    }
+
     if (!response.ok) {
+      if (response.status === 429) {
+        return res.status(429).json({ error: { message: allDay ? "rate_day" : "rate_minute" } });
+      }
       return res.status(response.status).json(data);
     }
     const text = data.choices?.[0]?.message?.content || "";
